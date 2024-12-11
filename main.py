@@ -40,13 +40,15 @@ async def process_image(file: UploadFile = File(...)):
 
             ocr_text = read_text(cropped_image)
 
-            closest_match, distance = find_closest_match(ocr_text, dataset)
+            closest_match, distance, closest_row = find_closest_match(ocr_text, dataset)
 
             ocr_results.append({
                 "text": ocr_text,
                 "bbox": box.xyxy.tolist(),  
                 "closest_match": closest_match, 
-                "distance": distance
+                "distance": distance,
+                "record": closest_row
+
             })
 
     return {"ocr_results": ocr_results}

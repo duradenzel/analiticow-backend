@@ -28,14 +28,21 @@ def crop_image(image, box):
 
 def load_dataset(csv_path, column_name):
     data = pd.read_csv(csv_path)
-    return data[column_name].astype(str).tolist()
+    return data
+    # return data[column_name].astype(str).tolist()
 
-def find_closest_match(ocr_text, dataset_entries):
+def find_closest_match(ocr_text, dataset):
     closest_entry = None
     min_distance = float('inf')
+    dataset_entries = dataset['Levensnummer'].astype(str).tolist()
     for entry in dataset_entries:
         distance = levenshtein_distance(ocr_text, entry)
         if distance < min_distance:
             min_distance = distance
             closest_entry = entry
-    return closest_entry, min_distance
+
+    closest_row = dataset.loc[dataset['Levensnummer'].astype(str) == str(closest_entry)]
+    if closest_row.empty:
+        return closest_entry, min_distance, None
+    closest_row = closest_row.to_json(orient="records")
+    return closest_entry, min_distance, closest_row
