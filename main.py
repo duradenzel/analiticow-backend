@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Query, UploadFile
 import cv2
 import numpy as np
 from utils import load_yolo_model, run_inference, read_text, crop_image, load_dataset, find_closest_match
@@ -51,4 +51,22 @@ async def process_image(file: UploadFile = File(...)):
 
             })
 
-    return {"ocr_results": ocr_results}
+    return {"results": ocr_results}
+
+
+@app.post("/search/")
+def search_record(data: dict):
+    query = data.get("query", "")
+    if not query:
+        return {"error": "Query is required"}
+    result = []
+    closest_entry, distance, closest_row = find_closest_match(query, dataset)
+    result.append({
+        "query": query,
+        "closest_match": closest_entry,
+        "distance": distance,
+        "record": closest_row
+    })
+    print(result)
+    
+    return {"result": result}

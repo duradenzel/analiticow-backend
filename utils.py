@@ -29,7 +29,6 @@ def crop_image(image, box):
 def load_dataset(csv_path, column_name):
     data = pd.read_csv(csv_path)
     return data
-    # return data[column_name].astype(str).tolist()
 
 def find_closest_match(ocr_text, dataset):
     closest_entry = None
