@@ -24,3 +24,6 @@ env/
 *.db
 *.sqlite3
 *.log
+
+
+processed_frames
