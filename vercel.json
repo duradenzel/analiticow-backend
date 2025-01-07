@@ -1,9 +1,5 @@
 {
-    "builds":[
-        {
-            "src": "main.py",
-            "use": "@vercel/python"
-
-        }
+   "builds": [
+    {"src": "main.py", "use": "@vercel/python", "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }}
     ]
 }
