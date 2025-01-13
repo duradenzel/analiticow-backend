@@ -1,5 +1,5 @@
 import logging
-from fastapi import FastAPI, File, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 import cv2
 import numpy as np
 from utils import load_yolo_model, run_inference, read_text, crop_image, load_dataset, find_closest_match
@@ -26,35 +26,46 @@ app.add_middleware(
 
 model = load_yolo_model("best.pt")
 dataset = load_dataset("Stallijst Baarlesebaan 30-8-24.csv", column_name="Levensnummer")
-video_dataset = load_dataset("video_dataset.csv", column_name="Levensnummer")  # New dataset for video frames
+video_dataset = load_dataset("video_dataset.csv", column_name="Levensnummer")  
+
+
 
 @app.post("/process/")
-async def process_file(file: UploadFile = File(...)):
-    file_extension = file.filename.split(".")[-1].lower()
-    logger.info(f"Received file: {file.filename}, file extension: {file_extension}")
-    
-    contents = await file.read()
+async def process_files(files: list[UploadFile] = File(...)):
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
+
     results = []
+    for file in files:
+        file_extension = file.filename.split(".")[-1].lower()
+        logger.info(f"Received file: {file.filename}, file extension: {file_extension}")
+        
+        contents = await file.read()
+        file_results = []
 
-    if file_extension in ["jpg", "jpeg", "png", "bmp"]:
-        logger.info("Processing image file")
-        image = cv2.imdecode(np.frombuffer(contents, np.uint8), cv2.IMREAD_COLOR)
-        results = process_single_image(image, dataset)  
+        if file_extension in ["jpg", "jpeg", "png", "bmp"]:
+            logger.info("Processing image file")
+            image = cv2.imdecode(np.frombuffer(contents, np.uint8), cv2.IMREAD_COLOR)
+            file_results = process_single_image(image, dataset)  
 
-    elif file_extension in ["mp4", "avi", "mov", "mkv"]:
-        logger.info("Processing video file")
-        temp_file = "temp_video." + file_extension
-        with open(temp_file, "wb") as f:
-            f.write(contents)
-        results = process_video(temp_file, video_dataset)  
+        elif file_extension in ["mp4", "avi", "mov", "mkv"]:
+            logger.info("Processing video file")
+            temp_file = f"temp_video_{file.filename}"
+            with open(temp_file, "wb") as f:
+                f.write(contents)
+            file_results = process_video(temp_file, video_dataset)
+            os.remove(temp_file)  # Clean up temporary file
 
-    else:
-        logger.error(f"Unsupported file format: {file_extension}")
-        return {"error": "Unsupported file format"}
+        else:
+            logger.error(f"Unsupported file format: {file_extension}")
+            file_results = {"error": f"Unsupported file format: {file_extension}"}
 
-    logger.info(f"Processing completed with {len(results)} results")
+        results.append(file_results)
+
+    logger.info(f"Processing completed with {len(results)} file results")
     return {"results": results}
 
+# The process_single_image and process_video functions remain unchanged
 
 def process_single_image(image, csv):
     logger.debug("Running inference on the image")
