@@ -143,10 +143,10 @@ def search_record(data: dict):
     if not query:
         return {"error": "Query is required"}
     result = []
-    closest_entry, distance, closest_row = find_closest_match(query, dataset)
+    closest_match, distance, closest_row = find_closest_match(query, dataset)
+
     result.append({
-        "query": query,
-        "closest_match": closest_entry,
+        "closest_match": closest_match,
         "distance": distance,
         "record": closest_row
     })
